@@ -57,14 +57,14 @@ int corsor_y = 1;
 int corsor_x = 0;
 int cs_pmy;
 int cs_pmx;
-String select_set;
-String status_set;
+String select_set; //status select mode 
+String status_set; // select  mode setup Reloan or cut
 String status_select;
-String sum_input_kb;
-float set_relond ; //set paramiter relond cablen
-float set_cut; // set paramiter legnht cut cablen
+String sum_input_kb; // palamitor input key board 
+String tag_satus_setup; // tagname status mode 
+float set_reload; //set paramiter reloadcablen
+float set_cut; // set paramiter Lenghtcut cablen
 float set_first;  // set paramiter first cut
-
 float temp_endcode;
 float calcular_comprimento;
 float calcular_rotary = (2 * 3.143 * 157.5); // คำนวนความยาวที่  end code หมุน 1 รอบ
@@ -151,7 +151,7 @@ void show_input_keypad() {
       if (status_select == "relond") {
         status_set = "set_relond";
         monitor_set_relond(0, 1);
-        seting_relond ();
+        seting_reload();
 
       }
       else if (status_select == "cut") {
@@ -171,12 +171,12 @@ lcd.setCursor(cs_pmx, cs_pmy);
   lcd.backlight();
   lcd.setCursor(0, 0);
   // แสดงเลือก โมดในการทำงาน
-  lcd.print("    Legnht : " );
+  lcd.print("    Lenght: " );
   lcd.setCursor(0, 1);
   
-  lcd.print("Lenght : " + String(calcular_comprimento, 3) + " cm");
+  lcd.print("Length: " + String(calcular_comprimento, 3) + " cm");
   lcd.setCursor(2, 2);
-  lcd.print("Relond : " + String(set_relond) + " cm");
+  lcd.print("reload: " + String(set_reload) + " cm");
   lcd.setCursor(5, 3);
   lcd.print("Cut : " + String(set_cut) + " cm");
   
@@ -191,11 +191,12 @@ void endcodeder_run() {
   if (calcular_comprimento != temp_endcode) {
     //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
     lcd.setCursor(0, 1);
-    lcd.print("Lenght : " + String(calcular_comprimento, 3) + " cm");
+    lcd.print("Length: " + String(calcular_comprimento, 3) + " cm");
     temp_endcode = calcular_comprimento;
   }
 
 }
+
 void rotary_endcoder() {
   if ( encoder_value != temp ) {
     Serial.print("Encoder count : ");
@@ -252,7 +253,7 @@ void monitor_set_relond(int cs_x, int cs_y) {
   //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
   lcd.setCursor(0, 1);
 
-  lcd.print("    Lenght : " + String(sum_input_kb) );
+  lcd.print("    Length: " + String(sum_input_kb) );
 
   lcd.setCursor(10, 2);
   lcd.print("cm");
@@ -260,12 +261,12 @@ void monitor_set_relond(int cs_x, int cs_y) {
   lcd.print("Cancel   Ok ");
   lcd.setCursor(cs_x, cs_y);
   lcd.print("->");
-  return (seting_relond());
+  return (seting_reload());
 }
 
-void seting_relond()
+void seting_reload()
 {
-  //Serial.println("seting_relond");
+  //Serial.println("seting_reload");
   while (true)
   {
     if (status_set == "set_relond") {
@@ -289,10 +290,12 @@ void seting_relond()
           if ( corsor_x == 0 || corsor_x == 12  ) {
             corsor_x = 2;
             select_set = "cancel";
+            Serial.println("scelect set : " + select_set);
           }
           else if ( corsor_x == 2) {
             corsor_x = 12;
             select_set = "ok";
+            Serial.println("scelect  set : " + select_set);
           }
           return (monitor_set_relond(corsor_x, corsor_y));
         }
@@ -303,12 +306,11 @@ void seting_relond()
         if (key == '#') {
           if (select_set == "ok") {
             status_set = select_set;
-            set_relond =  sum_input_kb.toFloat();
+            set_reload=  sum_input_kb.toFloat();
             Serial.println("status  set : " + status_set);
           }
-          if (select_set == "cancel") {
+          else if (select_set == "cancel") {
             status_set = select_set;
-            set_relond =  sum_input_kb.toFloat();
             Serial.println("status  set : " + status_set);
           }
 
@@ -334,8 +336,7 @@ void seting_relond()
     }
 
   }
-
-  // return(seting_relond());
+  // return(seting_reload());
   //return(monitor_set_relond(corsor_x,corsor_y));
   Serial.println("updata : succeed");
   status_select = "";
@@ -354,23 +355,23 @@ void monitor_set_cut(int cs_x, int cs_y) {
   //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
   lcd.setCursor(0, 1);
 
-  lcd.print("    Lenght : " + String(sum_input_kb) + " cm" );
+  lcd.print("    Length: " + String(sum_input_kb) + " cm" );
 
   lcd.setCursor(0, 2);
-  lcd.print();
+  lcd.print("");
   lcd.setCursor(5, 3);
   lcd.print("Cancel   Ok ");
   lcd.setCursor(cs_x, cs_y);
   lcd.print("->");
-  return (seting_relond());
+  return (seting_reload());
 }
 
 void seting_cut()
 {
-  //Serial.println("seting_relond");
+  //Serial.println("seting_reload");
   while (true)
   {
-    if (status_set == "set_relond") {
+    if (status_set == "set_cut") {
 
 
       key = keypad.getKey();  // สร้างตัวแปรชื่อ key ชนิด char เพื่อเก็บตัวอักขระที่กด
@@ -387,16 +388,24 @@ void seting_cut()
           return (monitor_set_relond(corsor_x, corsor_y));
         }
         if (key == 'B') {
-          corsor_y = 3;
+          
+          if (corsor_y == 1 ){
+            corsor_x = 1;
+            corsor_y = 2;
+
+          } 
+          else if(corsor_y == 2 || corsor_y == 3 ){ 
+            corsor_y == 3;
           if ( corsor_x == 0 || corsor_x == 12  ) {
             corsor_x = 2;
             select_set = "cancel";
           }
-          else if ( corsor_x == 2) {
+          else if ( corsor_y == 3 || corsor_x == 2) {
             corsor_x = 12;
             select_set = "ok";
           }
           return (monitor_set_relond(corsor_x, corsor_y));
+        }
         }
         if (key == 'C') {
           sum_input_kb = "";
@@ -405,12 +414,12 @@ void seting_cut()
         if (key == '#') {
           if (select_set == "ok") {
             status_set = select_set;
-            set_relond =  sum_input_kb.toFloat();
+            set_reload=  sum_input_kb.toFloat();
             Serial.println("status  set : " + status_set);
           }
           if (select_set == "cancel") {
             status_set = select_set;
-            set_relond =  sum_input_kb.toFloat();
+            set_reload=  sum_input_kb.toFloat();
             Serial.println("status  set : " + status_set);
           }
 
@@ -437,7 +446,7 @@ void seting_cut()
 
   }
 
-  // return(seting_relond());
+  // return(seting_reload());
   //return(monitor_set_relond(corsor_x,corsor_y));
   Serial.println("updata : succeed");
   status_select = "";
