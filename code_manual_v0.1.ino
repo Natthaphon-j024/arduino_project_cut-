@@ -8,6 +8,7 @@
 - ทดลอง เดินเครื่อง 
 */
 
+
 #include <EEPROM.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
@@ -195,6 +196,21 @@ lcd.setCursor(cs_pmx, cs_pmy);
   lcd.print("Cut : " + String(set_cut) + " cm");
   
   
+
+}
+
+void auto_readcut(){
+  float length_cable_now  = calcular_comprimento;
+  float temp_cut = set_cut - set_first - set_reload;
+  if (length_cable_now > temp_cut ){
+    // motor reload rocable stop
+    // motor cut cable start 3 s.
+    // motor reload rocable start 
+  }
+  else if (length_cable_now >= set_cut ){
+    // motor reload stop and end program
+    
+  }
 
 }
 void firter_unit(){
