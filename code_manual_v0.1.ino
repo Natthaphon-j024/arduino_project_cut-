@@ -493,3 +493,4 @@ void seting_cut()
   status_select = "";
   return (monitor_main(corsor_x,corsor_y));
 }
+test
