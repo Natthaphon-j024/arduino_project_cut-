@@ -1,3 +1,13 @@
+/*
+งานที่เหลือ คือ 
+- modeset cut 
+- monitos show cut 
+- cut start mode  function
+- mode online blynk
+
+- ทดลอง เดินเครื่อง 
+*/
+
 #include <EEPROM.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
@@ -53,19 +63,24 @@ char key;
 // int step = 0;
 // int sel = 0;
 // int slide = 0;
+
 int corsor_y = 1;
 int corsor_x = 0;
 int cs_pmy;
 int cs_pmx;
+//int temp_cls; //clspalamitor แถวที่ 1
+//int check_cle;
+String sfu; //show filter unit
 String select_set; //status select mode 
 String status_set; // select  mode setup Reloan or cut
 String status_select;
 String sum_input_kb; // palamitor input key board 
 String tag_satus_setup; // tagname status mode 
+float temp_sfu; // vlue filter para mitor 
 float set_reload; //set paramiter reloadcablen
 float set_cut; // set paramiter Lenghtcut cablen
 float set_first;  // set paramiter first cut
-float temp_endcode;
+float temp_endcode; 
 float calcular_comprimento;
 float calcular_rotary = (2 * 3.143 * 157.5); // คำนวนความยาวที่  end code หมุน 1 รอบ
 //bool main = false, stat2 = false, runn = false;
@@ -173,8 +188,7 @@ lcd.setCursor(cs_pmx, cs_pmy);
   // แสดงเลือก โมดในการทำงาน
   lcd.print("    Lenght: " );
   lcd.setCursor(0, 1);
-  
-  lcd.print("Length: " + String(calcular_comprimento, 3) + " cm");
+  lcd.print("Length: " + String(temp_sfu, 3) + " " + sfu);
   lcd.setCursor(2, 2);
   lcd.print("reload: " + String(set_reload) + " cm");
   lcd.setCursor(5, 3);
@@ -183,15 +197,42 @@ lcd.setCursor(cs_pmx, cs_pmy);
   
 
 }
+void firter_unit(){
+  float temp_calcular = calcular_comprimento ;
+ if (temp_calcular < 100.000 ){
+  sfu = "mm";
+ temp_sfu = temp_calcular;
+ }
+  else if(temp_calcular > 100.000  && temp_calcular < 9999.999){
+
+    sfu = "cm";
+    temp_sfu = temp_calcular/100;
+
+  }
+  else if (temp_calcular > 10000 ){
+ 
+    sfu = "m";
+    temp_sfu =  temp_calcular/10000;
+  }
+   
+}
+
+void cls_display_role_i(){
+    lcd.setCursor(7, 1);
+    lcd.clear();
+}
 
 void endcodeder_run() {
   rotary_endcoder();
   calcular();
-  Serial.println("calcular_comprimento :" + String(calcular_comprimento)+ ":" +String(temp_endcode));
+  //เช็คค่าการเปลียนแปลงระหว่างการทำงานเครื่องเหมือมีการเปลียนแปลงให้แสดงค่า
+  Serial.println("calcular_comprimento :" + String(calcular_comprimento)+ ":" +String(temp_endcode)); 
   if (calcular_comprimento != temp_endcode) {
+    firter_unit();
+    cls_display_role_i();
     //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
     lcd.setCursor(0, 1);
-    lcd.print("Length: " + String(calcular_comprimento, 3) + " cm");
+    lcd.print("Length: " + String(temp_sfu, 3) + " " + sfu);
     temp_endcode = calcular_comprimento;
   }
 
