@@ -128,6 +128,18 @@ void loop() {
 
 }
 
+//function runnig mode ทำงานตามคำสั่งที่ โดย การจะนำค่าที่ setting นวนโดย Auto  
+void runnig(){
+  if (set_main == "runnig"){
+    auto_readcut();
+  }
+
+  else if set_main =="stoping"{
+    
+  }
+  
+
+}
 void show_input_keypad() {
   key = keypad.getKey();  // สร้างตัวแปรชื่อ key ชนิด char เพื่อเก็บตัวอักขระที่กด
 
@@ -212,7 +224,11 @@ void auto_readcut(){
     
   }
 
+
 }
+
+
+
 void firter_unit(){
   float temp_calcular = calcular_comprimento ;
  if (temp_calcular < 100.000 ){
