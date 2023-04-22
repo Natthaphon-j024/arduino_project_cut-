@@ -138,7 +138,7 @@ void runnig(){
     
   }
   
-
+//test
 }
 void show_input_keypad() {
   key = keypad.getKey();  // สร้างตัวแปรชื่อ key ชนิด char เพื่อเก็บตัวอักขระที่กด
