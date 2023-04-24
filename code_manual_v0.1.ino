@@ -99,7 +99,7 @@ void setup() {
   //
   //  pinMode(motor_cut, OUTPUT);
   //
-  //digitalWrite(motor_roll, 1);
+digitalWrite(motor_roll, 1);
   //digitalWrite(motor_cut, 1);
   //
   pinMode(ENCODER_A, INPUT_PULLUP);
@@ -294,8 +294,8 @@ void encoder_b() {
 void calcular() {
 
   calcular_comprimento = calcular_rotary * turn;
-  //Serial.print("ความยาวสาย  ");
-  //Serial.println(calcular_comprimento,3);
+  Serial.print("ความยาวสาย  ");
+  Serial.println(calcular_comprimento,3);
 
 }
 
