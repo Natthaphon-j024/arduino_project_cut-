@@ -67,10 +67,10 @@ String status_set; // select  mode setup Reloan or cut
 String status_select;
 String sum_input_kb; // palamitor input key board 
 String tag_satus_setup; // tagname status mode 
-float set_reload = 3500; //set paramiter reloadcablen
+float set_reload = 2700; //set paramiter reloadcablen
 float temp_sfu = set_reload ; // vlue filter para mitor 
-float set_cut = 10000; // set paramiter Lenghtcut cablen
-float set_first = 2100;  // set paramiter first cut
+float set_cut = 50000; // set paramiter Lenghtcut cablen
+float set_first = 2200;  // set paramiter first cut
 float temp_endcode; 
 float calcular_comprimento;
 //float calcular_rotary = (2 * 3.143 * 157.5); // คำนวนความยาวที่  end code หมุน 1 รอบ
@@ -138,7 +138,7 @@ void endcodeder_run() {
   //Serial.println("calcular_comprimento :" + String(calcular_comprimento)+ ":" +String(temp_endcode)); 
   if (calcular_comprimento != temp_endcode) {
     
-    firter_unit();
+    monitor_test();
 //    cls_display_role_i();
     //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
     //lcd.setCursor(0, 1);
@@ -190,7 +190,7 @@ void encoder_b() {
 
 
 void calcular() {
-float calcular_rotary = (2 * 3.143 * 157.5); // คำนวนความยาวที่  end code หมุน 1 รอบ
+float calcular_rotary = (2 * 3.142 * 160); // คำนวนความยาวที่  end code หมุน 1 รอบ
   calcular_comprimento = calcular_rotary * turn;
   Serial.print("ความยาวสาย  ");
   Serial.println(calcular_comprimento,3);
@@ -227,12 +227,14 @@ void auto_readcut(){
     digitalWrite(relay_motor_lo, on);
 
   }
-  else if (length_cable_now >= setpoint_cut && length_cable_now <= (setpoint_cut +100) ){
+  else if (length_cable_now >= setpoint_cut && length_cable_now <= (setpoint_cut + 100) ){
     // motor reload rocable stop
     // motor cut cable start 3 s.
     // motor reload rocable start
-    digitalWrite(relay_motor_cut, on);
+      Serial.print("Cutt  ");
     digitalWrite(relay_motor_lo, off); 
+    digitalWrite(relay_motor_cut, on);
+   
     delay(6000);
     digitalWrite(relay_motor_cut, off);
     digitalWrite(relay_motor_lo, on);
