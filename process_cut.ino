@@ -1,12 +1,4 @@
-/*
-  งานที่เหลือ คือ
-  - modeset cut
-  - monitos show cut
-  - cut start mode  function
-  - mode online blynk
 
-  - ทดลอง เดินเครื่อง
-*/
 /*
   งานที่เหลือ คือ
   - modeset cut
@@ -140,12 +132,7 @@ void select_mode() {
   else if (status_mode == "setting") {
     setting();
   }
-  else if (status_mode == "stop") {
-    stoping();
-  }
-  else {
 
-  }
 
 
 }
@@ -502,7 +489,7 @@ void setting_reload()
           if (select_set == "ok") {
             status_set = select_set;
             set_reload =  sum_input_kb.toFloat();
-            EEPROM.push(data_set_reload,set_reload);
+            //EEPROM.put(data_set_reload,set_reload);
             Serial.println(set_reload);
             Serial.println("status  set : " + status_set);
           }
