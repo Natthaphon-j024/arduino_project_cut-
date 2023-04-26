@@ -210,8 +210,11 @@ void select_setting() {
         monitor_set_cut(0, 1);
         setting_cut();
 
-
+    else{
+      
+      }
     }
+   
 
   }
 }
@@ -295,7 +298,7 @@ void encoder_b() {
 
 
 void calcular() {
-  float calcular_rotary = (2 * 3.142 * 160); // คำนวนความยาวที่  end code หมุน 1 รอบ
+  float calcular_rotary = (2 * 3.142 * 32/2); // คำนวนความยาวที่  end code หมุน 1 รอบ
   calcular_comprimento = calcular_rotary * turn;
   Serial.print("ความยาวสาย  ");
   Serial.println(calcular_comprimento, 3);
@@ -303,23 +306,24 @@ void calcular() {
 
 void firter_unit() {
   float temp_calcular = calcular_comprimento + set_reload;
-  if (temp_calcular < 100.000 ) {
+  if (temp_calcular < 10.000 ) {
     sfu = "mm";
     temp_sfu = temp_calcular;
   }
-  else if (temp_calcular > 100.000  && temp_calcular < 9999.999) {
+  else if (temp_calcular > 10.000  && temp_calcular <= 999) {
     sfu = "cm";
-    temp_sfu = temp_calcular / 100;
+    temp_sfu = temp_calcular / 10;
   }
-  else if (temp_calcular > 10000 ) {
+  else if (temp_calcular > 1000 ) {
     sfu = "m";
-    temp_sfu =  temp_calcular / 10000;
+    temp_sfu =  temp_calcular / 1000;
   }
 }
+
 void firter_set_unit(float temp_set_calcular , String name_set) {
   float temp_set_sfu;
   String sfu_wait;
-  if (temp_set_calcular < 100.000 ) {
+  if (temp_set_calcular < 10.000 ) {
     sfu_wait = "mm";
     temp_set_sfu = temp_set_calcular;
   }
@@ -537,12 +541,12 @@ void monitor_set_cut(int cs_x, int cs_y) {
   lcd.backlight();
   lcd.setCursor(0, 0);
   // แสดงเลือก โมดในการทำงาน
-  lcd.print("   Setup : Cut(mm)"  );
+  lcd.print("   Setup : Cut"  );
   //  ระบุตำแหน่งในการแสดงใน  lcd  บรรทัด 0 และ ก็เริ่มต้นที่บรรรทัด
   lcd.setCursor(3, 1);
-  lcd.print("cut: " + String(sum_input_cut) );
+  lcd.print(" cut(m): " + String(sum_input_cut) );
   lcd.setCursor(3, 2);
-  lcd.print("Pre-cut: " + String(sum_input_Pre));
+  lcd.print("Pre(mm): " + String(sum_input_Pre));
   lcd.setCursor(5, 3);
   lcd.print("Cancel   Ok ");
   lcd.setCursor(cs_x, cs_y);
@@ -599,7 +603,7 @@ void setting_cut()
         if (key == '#') {
           if (select_set == "ok") {
             status_set = select_set;
-            set_cut =  sum_input_cut.toFloat();
+            set_cut =  (sum_input_cut.toFloat()*1000);
             set_pre = sum_input_Pre.toFloat();
             EEPROM.write(data_set_cut,set_cut);
             EEPROM.write(data_set_per_cut,set_pre); 
@@ -654,11 +658,3 @@ void setting_cut()
   return (monitor_main(corsor_x, corsor_y));
 }
 
-
-void read_data_setting()
-{
- //set_cut = EEPROM.read(data_set_cut);
-  //set_pre = EEPROM.read(data_set_per_cut);
-  //data_reload = EEPROM.get(data_set_reload);
-  //set_reload = data_reload;
-}
