@@ -9,11 +9,48 @@
 
   - ทดลอง เดินเครื่อง
 */
+
+#define relay_motor_lo 25
+#define relay_motor_cut 26
+#define on_d 0
+#define off_d 1
+#define data_set_cut 0
+#define data_set_per_cut 1
+#define data_set_reload 2
+
+// การเรียกใช้ผ่าน ไอดี โทรเค็น เท็มเพจ Blynk
+#define BLYNK_PRINT Serial
+#define BLYNK_TEMPLATE_ID "TMPL6YzkJmMLl"
+#define BLYNK_TEMPLATE_NAME "Quickstart Template"
+#define BLYNK_AUTH_TOKEN "n3mJUlHzv-6-G2jWHZR21zjzEdgsAfiz"
+//Http การประกาศเรียกใช้
+#include <HTTPClient.h>
+
+#include <BlynkSimpleEsp32.h>
+#include <WiFiClientSecure.h>
+// เรียกใช้ Timer ของ blynk เพื่อใช้ในการ อัปเดท หน้าจอ   blynk
+BlynkTimer timer;
+
+// เรียก ไรบารี wifi connect
+#include <WebServer.h>     // Replace with WebServer.h for ESP32
+#include <AutoConnect.h>
+
+
 #include <EEPROM.h>
 #include <Keypad_I2C.h>
 #include <Keypad.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+
+
+WebServer Server;          // Replace with WebServer for ESP32
+AutoConnect      Portal(Server);
+
+void rootPage() {
+  char content[] = "Hello, world";
+  Server.send(200, "text/plain", content);
+}
+
 
 // library Rotary encoder
 #define LPD3806  2400//รุ่น 600BM Rotary 3.2 cm.
@@ -50,13 +87,7 @@ Keypad_I2C keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, I2CADDR, PCF8
 int cursorColumn = 0;
 char key;
 
-#define relay_motor_lo 25
-#define relay_motor_cut 26
-#define on 0
-#define off 1
-#define data_set_cut 0
-#define data_set_per_cut 1
-#define data_set_reload 2
+
 byte data_cut;
 byte data_per_cut;
 byte data_reload;
@@ -74,21 +105,47 @@ String sum_input_Pre;
 String sum_input_cut;
 String tag_satus_setup; // tagname status mode
 String status_program ;
-float set_reload; //set paramiter reloadcablen
+float set_reload = 2750; //set paramiter reloadcablen
 float temp_sfu = set_reload ; // vlue filter para mitor
 float set_cut = 50000; // set paramiter Lenghtcut cablen
-float set_pre = 2200;  // set paramiter first cut
+float set_pre = 2500;  // set paramiter first cut
 float temp_endcode;
 float calcular_comprimento;
+float pinValueCut;
+float pinValueReload;
+float pinValuePre;
 //float calcular_rotary = (2 * 3.143 * 157.5); // คำนวนความยาวที่  end code หมุน 1 รอบ
 float itam_set_cut;
 float itam_set_reload;
 String itam_sucut;
 String itam_sureload;
 String  status_mode;
-bool status_program_eng;
-void setup() {
+bool status_program_eng = true;
+/*
+String httpGet(String pin){
+  HTTPClient http;
+  String token = "n3mJUlHzv-6-G2jWHZR21zjzEdgsAfiz";
+  String url = "https://blynk.cloud/external/api/get?token="+token+"&"+pin;
+  http.begin(url);
+  int httpResponseCode = http.GET();
+  // Check for a valid response
+  if (httpResponseCode == 200) {
+    String response = http.getString();
+    Serial.println(response);
+    return response;
+  } else {
+    Serial.print("Error: ");
+    Serial.println(httpResponseCode);
+  }
+  // Close the connection
+  http.end();
+  return "ERROR";
+}
+*/
 
+
+void setup() {
+  
   Wire.begin();
   keypad.begin( makeKeymap(keys) );
   Serial.begin(9600);
@@ -105,36 +162,157 @@ void setup() {
   // Declare pins as output:
  // monitor_test();
  
-  digitalWrite(relay_motor_lo, off);
-  digitalWrite(relay_motor_cut, off);
+  digitalWrite(relay_motor_lo, off_d);
+  digitalWrite(relay_motor_cut, off_d);
   Serial.print("set_reload ");
   Serial.print(set_reload);
   firter_set_unit(set_reload , "reload_unit");
   firter_set_unit(set_cut , "cut_unit");
   monitor_main(5, 5);
+  setup_blynk();
 }
 
 
+void setup_blynk()
+{ 
+  Server.on("/", rootPage);
+  if (Portal.begin()) {
+    Serial.println("WiFi connected: " + WiFi.localIP().toString());
+  }
+  
+  pinMode(LED_BUILTIN, OUTPUT);
+  
+  ///Serial.begin(115200);
+  String strSSID = WiFi.SSID();
+  String strPass = WiFi.psk();
+  
+  char ssid[strSSID.length()+1];
+  char password[strPass.length()+1];
+
+  strSSID.toCharArray(ssid, strSSID.length()+1);
+  strPass.toCharArray(password, strPass.length()+1);
+  
+  Blynk.begin(BLYNK_AUTH_TOKEN,ssid, password);
+  Serial.println(WiFi.localIP());
+  digitalWrite(LED_BUILTIN, HIGH);  
+  
+  //timer.setInterval(500L, customRand); 
+  timer.setInterval(500L, myTimer); 
+}      
+
+//blynk code 
+// This function will be called every time Slider Widget
+// in Blynk app writes values to the Virtual Pin 1
+BLYNK_WRITE(V1)
+{
+  int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
+  // You can also use:
+  // String i = param.asStr();
+  // double d = param.asDouble();
+  Serial.print("V1 Slider value is: ");
+  Serial.println(pinValue);
+}
+
+
+
+
+void myTimer() 
+{
+  // This function describes what will happen with each timer tick
+  // e.g. writing sensor value to datastream V5
+  float lenght_blnk = calcular_comprimento/1000 ;// แปลงค่าส่ง blynk length
+  Blynk.virtualWrite(V4,lenght_blnk);  
+}
+
+//void customRand() {
+  //randNumber = random(0, 200);  
+//}
+
+BLYNK_WRITE(V0)
+{
+  int pinValueStus = param.asInt(); // assigning incoming value from pin V1 to a variable
+  Serial.print("V0 Slider value is: ");
+  Serial.println(pinValueStus);
+  if (pinValueStus == 1){
+  Blynk.virtualWrite(V0,1);
+  running();
+  }
+  else {
+    Blynk.virtualWrite(V0,0);
+    status_program_eng == true;
+  }
+} 
+
+BLYNK_WRITE(V2)
+{
+  pinValueReload= param.asInt(); // assigning incoming value from pin V1 to a variable
+  Serial.print("V1 Slider value is: ");
+  Serial.println(pinValueReload);
+}
+BLYNK_WRITE(V4)
+{
+  pinValuePre= param.asInt(); // assigning incoming value from pin V1 to a variable
+  Serial.print("V4 Slider value is: ");
+  Serial.println(pinValuePre);
+}
+
+BLYNK_WRITE(V6)
+{
+  pinValueCut = param.asDouble(); // assigning incoming value from pin V1 to a variable
+ /* Serial.print("Uptime is: ");
+  Serial.print(pinValue);
+  Serial.println("ms");
+  httpGet("v2");
+*/
+}
+BLYNK_WRITE(V8)
+{
+  float pinValueSet = param.asInt(); // assigning incoming value from pin V1 to a variable
+  Serial.print("V1 Slider value is: ");
+  Serial.println(pinValueSet);
+    if (pinValueSet == 1  && status_program_eng == true){
+        set_cut = pinValueCut*1000; //  แปลงเป็น เมตร และ เก็บ set_cut
+        set_pre = pinValuePre;
+        set_reload = pinValueReload;
+        setting_palamitor =  "blynk";
+        firter_set_unit(set_reload , "reload_unit");
+        firter_set_unit(set_cut , "cut_unit");
+        monitor_main(5, 5);
+       
+    }
+
+ /* Serial.print("Uptime is: ");
+  Serial.print(pinValue);
+  Serial.println("ms");
+  httpGet("v2");
+*/
+}
+
+
+
 void loop() {
+  blynk_fuction();
   select_mode();
-  endcodeder_run();
+  endcodeder_run(); // เช็คค่าที่มีการเปลี่ยนแปลง endcode และค่าที่ setup
+}
+
+void blynk_fuction(){
+  Portal.handleClient();
+  Blynk.run();
+  timer.run(); // Initiates BlynkTimer
 }
 
 void select_mode() {
 
   corsor_main();
-  select_setting();
+ select_setting();
   if  (status_mode  == "running") {
     Serial.println("running");
+    Blynk.virtualWrite(V0,1);
     running();
 
   }
-  else if (status_mode == "setting") {
-    setting();
-  }
-
-
-
+ 
 }
 
 void corsor_main() {
@@ -168,12 +346,22 @@ void corsor_main() {
 
 
 }
-
 void setting() {
-
+select_setting();
 
 }
+void set_relay_cut(){
+  if (key == '1'){
+  digitalWrite(relay_motor_cut, off_d);
+  }
+  if(key == '2'){
+  digitalWrite(relay_motor_cut, on_d);
+  }
+}
+
 void select_setting() {
+
+set_relay_cut();
   if (setting_palamitor == "setting" ) {
     if (key == 'A') {
       corsor_x = 0;
@@ -224,11 +412,14 @@ void running() {
   status_program_eng = false;
   while (true)
   {
+    blynk_fuction();
     show_input_keypad();
     endcodeder_run();
     auto_readcut();
     if (status_program_eng == true  || key == '*' )
     {
+    digitalWrite(relay_motor_lo, off_d);
+    digitalWrite(relay_motor_cut, off_d);
       status_program_eng = false;
       status_mode = "stop";
       break;
@@ -300,7 +491,7 @@ void encoder_b() {
 
 
 void calcular() {
-  float calcular_rotary = (2 * 3.142 * 32/2); // คำนวนความยาวที่  end code หมุน 1 รอบ
+  float calcular_rotary = (2 * 3.142 * 31.7/2); // คำนวนความยาวที่  end code หมุน 1 รอบ
   calcular_comprimento = calcular_rotary * turn;
   Serial.print("ความยาวสาย  ");
   Serial.println(calcular_comprimento, 3);
@@ -360,43 +551,28 @@ void auto_readcut() {
   Serial.print("setpoint : " + String( setpoint_cut) );
   if (length_cable_now < setpoint_cut) {
     Serial.print("relsy motor_lo ON ");
-    digitalWrite(relay_motor_lo, on);
+    digitalWrite(relay_motor_lo, on_d);
   }
   else if (length_cable_now >= setpoint_cut && length_cable_now <= (setpoint_cut + 100) ) {
     // motor reload rocable stop
     // motor cut cable start 3 s.
     // motor reload rocable start
     Serial.print("Cutt  ");
-    digitalWrite(relay_motor_lo, off);
-    digitalWrite(relay_motor_cut, on);
+    digitalWrite(relay_motor_lo, off_d);
+    digitalWrite(relay_motor_cut, on_d);
 
     delay(6000);
-    digitalWrite(relay_motor_cut, off);
-    digitalWrite(relay_motor_lo, on);
+    digitalWrite(relay_motor_cut, off_d);
+    digitalWrite(relay_motor_lo, on_d);
     delay(3000);
   }
   else if (length_cable_now >= (set_cut - set_reload) ) {
     // motor reload stop and end program
-    digitalWrite(relay_motor_lo, off);
-    digitalWrite(relay_motor_cut, off);
+    digitalWrite(relay_motor_lo, off_d);
+    digitalWrite(relay_motor_cut, off_d);
     status_program_eng = true ;
   }
 }
-
-void monitor_test() {
-  firter_unit();
-  lcd.init();
-  lcd.backlight();
-  lcd.setCursor(0, 1);
-  lcd.print("Length: " + String(temp_sfu, 3) + " " + sfu);
-}
-
-// mode setting
-
-
-// void display_select(){
-
-// }
 
 
 //keypad
@@ -420,13 +596,13 @@ firter_unit();
   lcd.backlight();
   lcd.setCursor(0, 0);
   // แสดงเลือก โมดในการทำงาน
-  lcd.print("  Lenght: " + setting_palamitor );
+  lcd.print("  Status: " + setting_palamitor );
   lcd.setCursor(0, 1);
   lcd.print("Length: " + String(temp_sfu, 3) + " " + sfu);
   lcd.setCursor(2, 2);
-  lcd.print("reload: " + String(itam_set_reload) + itam_sureload);
+  lcd.print("reload: " + String(itam_set_reload) + " "+ itam_sureload);
   lcd.setCursor(5, 3);
-  lcd.print("Cut: " + String(itam_set_cut) + itam_sucut);
+  lcd.print("Cut: " + String(itam_set_cut) + " "+ itam_sucut);
 
 
 
@@ -598,7 +774,7 @@ void setting_cut()
           return (monitor_set_cut(corsor_x, corsor_y));
         }
         if (key == 'C' && corsor_y ==  1) {
-          sum_input_kb = "";
+          sum_input_cut = "";
           return (monitor_set_cut(corsor_x, corsor_y));
         }
         if (key == 'C' && corsor_y ==  2) {

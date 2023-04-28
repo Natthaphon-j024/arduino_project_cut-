@@ -78,10 +78,10 @@ void myTimer()
   // e.g. writing sensor value to datastream V5
   Blynk.virtualWrite(V4, randNumber);  
 }
-
-void customRand() {
-  randNumber = random(0, 200);  
-}
+/
+//void customRand() {
+  //randNumber = random(0, 200);  
+//}
 
 
 BLYNK_WRITE(V2)
@@ -111,7 +111,7 @@ void setup()
   
   pinMode(LED_BUILTIN, OUTPUT);
   
-  Serial.begin(115200);
+  ///Serial.begin(115200);
   String strSSID = WiFi.SSID();
   String strPass = WiFi.psk();
   
